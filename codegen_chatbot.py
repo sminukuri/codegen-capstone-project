@@ -144,6 +144,12 @@ if prompt:
                 st.error("❌ Compilation Failed")
                 st.code(response["compiler_error"])
 
+        if response.get("pass_percentage") is not None:
+
+            st.markdown("### 🧪 Test Results")
+
+            st.write(f"**Pass Percentage:** {response['pass_percentage']}%")
+        
         # Evaluation
         if response.get("evaluation"):
 
