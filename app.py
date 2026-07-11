@@ -34,6 +34,7 @@ def startup():
 
 class Request(BaseModel):
     query: str
+    task: str
     source_language: str
     target_language: str
     source_code: str
@@ -68,6 +69,21 @@ def translate(req: Request) -> str:
     result = invoke_model(prompt_text)
     return result
 
+@app.post("/repair")
+def repair(req: Request) -> str:
+
+    prompt_text = f"""
+    ### Instruction
+    The following code has compilation errors. Please fix and generate the corrected code.
+    problem statement for the code: {req.query}
+
+    ### Input
+    {req.output_code}
+    ### Response
+    """
+    result = invoke_model(prompt_text)
+    return result
+    
 def invoke_model(prompt_text: str) -> str:
     
     inputs = tokenizer(
