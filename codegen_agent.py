@@ -1,28 +1,39 @@
-
 from gettext import translation
+from os import stat
 from typing import Any
 from langgraph.graph import END, START, MessagesState
 from langgraph.graph import StateGraph
-from code_generator import generate, translate
+from code_generator import generate, translate, repair
 from code_explanation import explain
-from state import AgentState, Task
+from state import AgentState, Language, Task
 from router import invoke_router
+from compiler_agent import compile_code
+from python_validation_agent import  validate_python_code
+from java_validation_agent import validate_java_code
 
 
 def generator_node(state: AgentState) -> dict[str, Any]:
-    code = generate(state)
+    code = generate(state)    
     return {
         "generated_code": code
     }
 
 def translation_node(state: AgentState) -> dict[str, Any]:
-    code = translate(state)
+    code = translate(state)    
     return {
         "translated_code": code
     }
 
 def explain_node(state: AgentState) -> dict[str, Any]:
-    explanation = explain(state)
+    if state.router.task != Task.EXPLAIN:
+        code = state.generated_code or state.translated_code
+    else:
+        code = state.router.source_code
+    
+    if code is None:
+        raise ValueError("No code available for explanation.")
+     
+    explanation = explain(code)
     return {
         "explanation": explanation
     }
@@ -38,14 +49,46 @@ def supervisor_node(state: AgentState) -> dict[str, Any]:
     return {}
 
 def compiler_node(state: AgentState) -> dict[str, Any]:
-    return {}
+    # return {
+    #     "compilation_success": True,
+    #     "compiler_error": None
+    # }
+    compilation_success = compile_code(state)
+
+    return {
+        "compilation_success": compilation_success,
+        "compiler_error": None if compilation_success else "Compilation failed."
+    }
 
 def repair_node(state: AgentState) -> dict[str, Any]:
+    repair_output = repair(state)
+    if state.router.task == Task.TRANSLATE:
+        translated_code = repair_output
+        return {
+            "translated_code": translated_code
+        }
+    elif state.router.task == Task.GENERATE:
+        generated_code = repair_output
+        return {
+            "generated_code": generated_code
+        }
+    
     return {}
+
+def validation_node(state: AgentState) -> dict[str, Any]:
+    code = state.generated_code or state.translated_code
+    if code is None:
+        raise ValueError("No code available for validation.")
+    target_language = state.router.target_language
+    if target_language == Language.JAVA:
+        pass_percentage = validate_java_code(state.user_query, code)
+    else:
+        pass_percentage = validate_python_code(state.user_query, code)
+    return {"pass_percentage": pass_percentage}
 
 def supervisor_router(state):
 
-    task = state["router"].task
+    task = state.router.task
 
     if task == Task.TRANSLATE:
         return "translation"
@@ -59,8 +102,10 @@ def supervisor_router(state):
     else:
         return "end"
     
-def compiler_router(state: AgentState) -> dict[str, Any]:
-    return {}
+def compiler_router(state: AgentState) -> str:
+    if state.compilation_success is False or state.compiler_error:
+        return "repair"
+    return "success"
     
 builder = StateGraph(AgentState)
 
@@ -75,6 +120,8 @@ builder.add_node("generation", generator_node)
 builder.add_node("compiler", compiler_node)
 
 builder.add_node("repair", repair_node)
+
+builder.add_node("validation", validation_node)
 
 builder.add_node("explanation", explain_node)
 
@@ -100,12 +147,14 @@ builder.add_edge("translation", "compiler")
 builder.add_conditional_edges("compiler",
     compiler_router,
     {
-        "success": "explanation",
+        "success": "validation",
         "repair": "repair"
     }
 )
 
 builder.add_edge("repair", "compiler")
+
+builder.add_edge("validation", "explanation")
 
 builder.add_edge("explanation", END)
 

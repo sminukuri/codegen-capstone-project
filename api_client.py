@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class Request(BaseModel):
     query: str
+    task: str
     source_language: str
     target_language: str
     source_code: str
@@ -20,9 +21,11 @@ def generate_code(query: str) -> str:
         str: The generated code from the FastAPI response.
     """
     try:
-        request_obj = Request(query=query, source_language="", target_language="", source_code="", output_code="")
+        request_obj = Request(query=query, task="", source_language="", target_language="", source_code="", output_code="")
         response = requests.post(f"{FAST_API_URL}/generate", json=request_obj.model_dump())
         response.raise_for_status()  # Raise an error for bad responses
+        print(f"Request to FastAPI for /generate: {request_obj.model_dump()}")
+        print(f"Response from FastAPI for /generate: {response.json()}")
         return str(response.json())
     except requests.RequestException as e:
         print(f"Error during request to FastAPI: {e}")
@@ -42,32 +45,58 @@ def translate_code(source_code: str, source_language: str, target_language: str)
         str: The translated code from the FastAPI response.
     """
     try:
-        request_obj = Request(query="", source_language=source_language, target_language=target_language, source_code=source_code, output_code="")
+        request_obj = Request(query="",  task="", source_language=source_language, target_language=target_language, source_code=source_code, output_code="")
         response = requests.post(
             f"{FAST_API_URL}/translate",
             json=request_obj.model_dump()
         )
         response.raise_for_status()  # Raise an error for bad responses
+        print(f"Request from FastAPI for /translate: {request_obj.model_dump()}")
+        print(f"Response from FastAPI for /translate: {response.json()}")
         return str(response.json())
     except requests.RequestException as e:
         print(f"Error during request to FastAPI: {e}")
         return ""
 
-def explain_code(code: str) -> str:
+def repair_code(code: str) -> str:
     """
-    Explain code using the FastAPI endpoint.
+    Repair code using the FastAPI endpoint.
 
     Args:
-        code (str): The code to explain.
+        code (str): The code to repair.        
 
     Returns:
-        str: The explanation of the code from the FastAPI response.
+        str: The repaired code from the FastAPI response.
     """
     try:
-        request_obj = Request(query="", source_language="", target_language="", source_code="", output_code=code)
-        response = requests.post(f"{FAST_API_URL}/explain", json=request_obj.model_dump())
+        request_obj = Request(query="",  task="",source_language="", target_language="", source_code="", output_code=code)
+        response = requests.post(
+            f"{FAST_API_URL}/repair",
+            json=request_obj.model_dump()
+        )
         response.raise_for_status()  # Raise an error for bad responses
+        print(f"Request to FastAPI for /repair: {request_obj.model_dump()}")
+        print(f"Response from FastAPI for /repair: {response.json()}")
         return str(response.json())
     except requests.RequestException as e:
         print(f"Error during request to FastAPI: {e}")
-        return ""    
+        return ""
+
+# def explain_code(code: str) -> str:
+#     """
+#     Explain code using the FastAPI endpoint.
+
+#     Args:
+#         code (str): The code to explain.
+
+#     Returns:
+#         str: The explanation of the code from the FastAPI response.
+#     """
+#     try:
+#         request_obj = Request(query="", source_language="", target_language="", source_code="", output_code=code)
+#         response = requests.post(f"{FAST_API_URL}/explain", json=request_obj.model_dump())
+#         response.raise_for_status()  # Raise an error for bad responses
+#         return str(response.json())
+#     except requests.RequestException as e:
+#         print(f"Error during request to FastAPI: {e}")
+#         return ""    

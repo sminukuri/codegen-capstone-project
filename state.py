@@ -48,5 +48,7 @@ class AgentState(BaseModel):
     compilation_success: Optional[bool] = None
 
     compiler_error: Optional[str] = None
+    
+    pass_percentage: Optional[float] = None
 
     evaluation: Optional[dict] = None

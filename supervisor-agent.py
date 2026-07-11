@@ -5,13 +5,13 @@ from langgraph.graph import StateGraph
 from langchain.messages import HumanMessage
 from code_generator import generate
 from code_explanation import explain
-from state import AgentState
+from agent_state import AgentState
 
 
 def generator_node(state: AgentState) -> dict[str, Any]:
     result = generate(state)
     return {
-        "generated_code": result
+        "output_code": result
     }
 
 def explain_node(state: AgentState) -> dict[str, Any]:
@@ -39,7 +39,7 @@ response = graph.invoke({
     "source_language": "",
     "target_language": "",
     "source_code": "",
-    "generated_code": "",
+    "output_code": "",
     "explanation": ""
 })
 
@@ -47,7 +47,7 @@ for message in response["messages"]:
     print(message.content)
 
 print("Output Code: \n")    
-print(response["generated_code"])
+print(response["output_code"])
 print("Explanation: \n")
 print(response["explanation"])
 
@@ -59,7 +59,7 @@ def invoke_graph(query: str) -> dict[str, Any]:
         "source_language": "",
         "target_language": "",
         "source_code": "",
-        "generated_code": "",
+        "output_code": "",
         "explanation": ""
     })
     return response
