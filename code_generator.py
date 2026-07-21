@@ -4,6 +4,7 @@ from typing import Any
 
 from state import AgentState, Language, Task
 from api_client import generate_code, translate_code, repair_code
+from util import get_code_by_task
 
 def generate(state: AgentState) -> str:
     return generate_code(state.user_query)
@@ -25,8 +26,8 @@ def translate(state: AgentState) -> str:
     )
     
 def repair(state: AgentState) -> str: 
+    code_to_repair = get_code_by_task(state)
     
-    code_to_repair = state.generated_code or state.translated_code
     if code_to_repair is None:
         raise ValueError("No code available for repair.")    
     repair_output = repair_code(code_to_repair)    

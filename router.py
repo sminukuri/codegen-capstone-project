@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from typing import Optional
 from langchain_groq import ChatGroq
@@ -24,6 +24,19 @@ router_prompt = ChatPromptTemplate.from_messages(
 You are an expert AI Router for a Code Assistant.
 
 Your job is ONLY to classify the user's request and extract structured information.
+
+The conversation history is provided below. Use it to understand references such as:
+- it
+- this
+- previous code
+- above code
+- generated code
+- translated code
+- optimize it
+- explain it
+- convert it
+
+If the latest user message refers to a previous code snippet, infer the intent using the conversation history.
 
 IMPORTANT RULES:
 
@@ -112,6 +125,9 @@ Return EXACTLY this schema:
 }}
 """
         ),
+
+        MessagesPlaceholder(variable_name="history"),
+
         (
             "human",
             "{user_query}"
@@ -134,6 +150,7 @@ def invoke_router(state: AgentState) -> RouterOutput:
     user_query = state.user_query
     response = router_llm.invoke(
         router_prompt.format_messages(
+            history=state.messages,
             user_query=user_query
         )
     )

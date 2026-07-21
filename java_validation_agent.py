@@ -63,6 +63,20 @@ Each test case must contain:
 - input: Array of input parameters (MUST be actual numeric values, NOT Java constants)
 - expected_output: The expected return value (MUST be an actual numeric value, NOT Java constants like Integer.MAX_VALUE)
 - inputTypes: Array of Java input type names (e.g., ["int", "int"])
+- For methods having a single List parameter,
+    the input field MUST contain one element,
+    which is the entire list.
+
+    Correct
+
+    "input":[
+        [1,2,3]
+    ]
+
+    Wrong
+
+    "input":[1,2,3]
+
 
 Rules:
 

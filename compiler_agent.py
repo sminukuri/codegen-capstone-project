@@ -3,9 +3,12 @@ import os
 import subprocess
 
 from state import AgentState, Language
+from util import get_code_by_task
 
 def compile_code(state : AgentState) -> bool:
-    code = state.generated_code or state.translated_code
+    code = None
+    code = get_code_by_task(state)
+    
     if not code:
         raise ValueError("No code available for compilation.")
 

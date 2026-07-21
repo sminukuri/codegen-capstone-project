@@ -10,32 +10,46 @@ from router import invoke_router
 from compiler_agent import compile_code
 from python_validation_agent import  validate_python_code
 from java_validation_agent import validate_java_code
-
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain_core.messages import AIMessage
 
 def generator_node(state: AgentState) -> dict[str, Any]:
-    code = generate(state)    
+    gencode = generate(state)    
     return {
-        "generated_code": code
+        "generated_code": gencode,
+        "messages": [
+            AIMessage(content=gencode)
+        ]
     }
 
 def translation_node(state: AgentState) -> dict[str, Any]:
-    code = translate(state)    
+    trnscode = translate(state)    
     return {
-        "translated_code": code
+        "translated_code": trnscode,
+        "messages": [
+            AIMessage(content=trnscode)
+        ]
     }
 
 def explain_node(state: AgentState) -> dict[str, Any]:
-    if state.router.task != Task.EXPLAIN:
-        code = state.generated_code or state.translated_code
+    code = None
+    if state.router.task == Task.GENERATE:
+        code = state.generated_code
+    elif state.router.task == Task.TRANSLATE:
+        code = state.translated_code     
     else:
         code = state.router.source_code
     
     if code is None:
+        print(f"task: {state.router.task}, generated_code: {state.generated_code}, translated_code: {state.translated_code}, source_code: {state.router.source_code}")
         raise ValueError("No code available for explanation.")
      
     explanation = explain(code)
     return {
-        "explanation": explanation
+        "explanation": explanation,
+        "messages": [
+            AIMessage(content=explanation)
+        ]
     }
     
 def router_node(state: AgentState) -> dict[str, Any]:
@@ -65,12 +79,14 @@ def repair_node(state: AgentState) -> dict[str, Any]:
     if state.router.task == Task.TRANSLATE:
         translated_code = repair_output
         return {
-            "translated_code": translated_code
+            "translated_code": translated_code,
+            "repair_attempts": state.repair_attempts + 1
         }
     elif state.router.task == Task.GENERATE:
         generated_code = repair_output
         return {
-            "generated_code": generated_code
+            "generated_code": generated_code,
+            "repair_attempts": state.repair_attempts + 1
         }
     
     return {}
@@ -101,11 +117,20 @@ def supervisor_router(state):
 
     else:
         return "end"
-    
+
+
+MAX_REPAIR_ATTEMPTS = 1    
 def compiler_router(state: AgentState) -> str:
-    if state.compilation_success is False or state.compiler_error:
+    # if state.compilation_success is False and state.repair_attempts < MAX_REPAIR_ATTEMPTS:
+    #     return "repair"
+    #return "success"
+    if state.compilation_success:
+        return "success"
+
+    if state.repair_attempts < MAX_REPAIR_ATTEMPTS:
         return "repair"
-    return "success"
+
+    return "failed"
     
 builder = StateGraph(AgentState)
 
@@ -148,7 +173,8 @@ builder.add_conditional_edges("compiler",
     compiler_router,
     {
         "success": "validation",
-        "repair": "repair"
+        "repair": "repair",
+        "failed": "explanation"
     }
 )
 
@@ -158,7 +184,8 @@ builder.add_edge("validation", "explanation")
 
 builder.add_edge("explanation", END)
 
-graph  = builder.compile()
+memory = InMemorySaver()
+graph  = builder.compile(checkpointer=memory)
 
 print(graph.get_graph().draw_mermaid())
 
@@ -167,26 +194,10 @@ png = graph.get_graph().draw_mermaid_png()
 with open("graph.png", "wb") as f:
     f.write(png)
 
-# query = "Please write a Python function to calculate the sum of two numbers."
-# response = graph.invoke({
-#     "messages": [HumanMessage(content=query)],
-#     "query": query,
-#     "translation": False,
-#     "source_language": "",
-#     "target_language": "",
-#     "source_code": "",
-#     "generated_code": "",
-#     "explanation": ""
-# })
-
-# for message in response["messages"]:
-#     print(message.content)
-
-# print("Output Code: \n")    
-# print(response["generated_code"])
-# print("Explanation: \n")
-# print(response["explanation"])
-
 def invoke_graph(state: AgentState) ->AgentState:
-    response = graph.invoke(state)
+    response = graph.invoke(state, config={
+        "configurable": {
+            "thread_id": state.thread_id
+        }
+    })
     return response

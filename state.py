@@ -1,4 +1,7 @@
 from typing import Optional
+from typing import Annotated
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
@@ -6,6 +9,7 @@ from pydantic import BaseModel
 
 class RouterInput(BaseModel):
     user_query:  str
+    thread_id: Optional[str] = None
 
 class Task(str, Enum):
     GENERATE = "generate"
@@ -26,6 +30,9 @@ class RouterOutput(BaseModel):
     
 class AgentState(BaseModel):
 
+    messages: Annotated[list[BaseMessage], add_messages]
+    
+    thread_id: Optional[str] = None
     # Original user query
     user_query: str
 
@@ -52,3 +59,5 @@ class AgentState(BaseModel):
     pass_percentage: Optional[float] = None
 
     evaluation: Optional[dict] = None
+    
+    repair_attempts: int
