@@ -18,14 +18,14 @@ def response_generator():
         time.sleep(0.05)
 
 
-def invoke_router_agent(user_query) -> dict:
+def invoke_router_agent(user_query, thread_id) -> dict:
     """
     Sends a prompt to the Router Agent and returns the response as a JSON-compatible dictionary.
     """
     try:
         response = requests.post(
             f"{FAST_API_URL}/router",
-            json={"user_query": user_query},
+            json={"user_query": user_query, "thread_id": thread_id},
             timeout=300,
         )
         response.raise_for_status()

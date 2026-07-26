@@ -1,5 +1,7 @@
 import streamlit as st
+import uuid
 from codegen_api import invoke_router_agent
+from state import Task
 
 st.set_page_config(
     page_title="Agentic AI Code Assistant",
@@ -15,6 +17,10 @@ st.title("🤖 Agentic AI Code Assistant")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
+    
 # Display previous messages
 for msg in st.session_state.messages:
 
@@ -32,7 +38,7 @@ for msg in st.session_state.messages:
             st.markdown(f"### 📝 Task: **{task.capitalize()}**")
 
             # Generated Code
-            if response.get("generated_code"):
+            if response.get("generated_code") and response["router"]["task"] == Task.GENERATE:
 
                 st.markdown("### 💻 Generated Code")
 
@@ -42,7 +48,7 @@ for msg in st.session_state.messages:
                 )
 
             # Translated Code
-            if response.get("translated_code"):
+            if response.get("translated_code") and response["router"]["task"] == Task.TRANSLATE:
 
                 st.markdown("### 💻 Translated Code")
 
@@ -106,16 +112,16 @@ if prompt:
 
         with st.spinner("Thinking..."):
 
-            response = invoke_router_agent(prompt)
+            response = invoke_router_agent(prompt, st.session_state.thread_id)
 
-        st.json(response)
+        #st.json(response)
 
         task = response["router"]["task"]
 
         st.markdown(f"### 📝 Task: **{task.capitalize()}**")
 
         # Generated Code
-        if response.get("generated_code"):
+        if response.get("generated_code") and response["router"]["task"] == Task.GENERATE:
 
             st.markdown("### 💻 Generated Code")
 
@@ -125,7 +131,7 @@ if prompt:
             )
 
         # Translated Code
-        if response.get("translated_code"):
+        if response.get("translated_code") and response["router"]["task"] == Task.TRANSLATE:
 
             st.markdown("### 💻 Translated Code")
 
@@ -142,7 +148,7 @@ if prompt:
             st.write(response["explanation"])
 
         # Compilation
-        if response.get("compilation_success") is not None:
+        if response.get("compilation_success") is not None and response["router"]["task"] != Task.EXPLAIN:
 
             if response["compilation_success"]:
                 st.success("✅ Compilation Successful")
@@ -150,7 +156,7 @@ if prompt:
                 st.error("❌ Compilation Failed")
                 st.code(response["compiler_error"])
 
-        if response.get("pass_percentage") is not None:
+        if response.get("pass_percentage") is not None and response["router"]["task"] != Task.EXPLAIN:
 
             st.markdown("### 🧪 Test Results")
 
