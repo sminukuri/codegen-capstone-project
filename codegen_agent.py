@@ -12,6 +12,7 @@ from python_validation_agent import  validate_python_code
 from java_validation_agent import validate_java_code
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import AIMessage
+from util import get_code_by_task
 
 def generator_node(state: AgentState) -> dict[str, Any]:
     gencode = generate(state)    
@@ -92,7 +93,7 @@ def repair_node(state: AgentState) -> dict[str, Any]:
     return {}
 
 def validation_node(state: AgentState) -> dict[str, Any]:
-    code = state.generated_code or state.translated_code
+    code = get_code_by_task(state)
     if code is None:
         raise ValueError("No code available for validation.")
     target_language = state.router.target_language

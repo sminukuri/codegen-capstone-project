@@ -365,25 +365,11 @@ def execute_java_tests(code: str, test_cases: list[dict]) -> list[dict]:
                     # Build method call parameters
                     params = []
                     args = []
-                    # for i, (val, typ) in enumerate(zip(input_data, input_types)):
-                    #     param_name = f"param{i}"
-                    #     params.append(f'{typ} {param_name} = {val};')
-                    #     args.append(param_name)
                     for i, (val, typ) in enumerate(zip(input_data, input_types)):
                         param_name = f"param{i}"
-
-                        declaration = typ
-                        if typ == "List":
-                            declaration = "java.util.List"
-                        elif typ.startswith("List<"):
-                            declaration = typ.replace("List", "java.util.List")
-
-                        params.append(
-                            f"{declaration} {param_name} = {java_literal(val, typ)};"
-                        )
-
+                        params.append(f'{typ} {param_name} = {val};')
                         args.append(param_name)
-                     
+                    
                     # # Create test harness - sanitize test name for Windows filenames
                     # test_name = test_case.get('description', 'test')
                     # # Remove illegal Windows filename characters: < > : " / \ | ? *
@@ -559,121 +545,3 @@ def validate_java_code(user_query: str, code: str) -> float:
         import traceback
         traceback.print_exc()
         return 0.0
-
-def java_literal(value, java_type):
-    """
-    Convert a Python value into a valid Java literal.
-
-    Supports:
-    - int, long, double, float
-    - boolean
-    - char
-    - String
-    - int[], long[], double[], float[], char[], String[]
-    - java.util.List / List
-    """
-
-    java_type = java_type.strip()
-
-    # ---------- Primitive ----------
-    if java_type in ("int", "Integer"):
-        return str(int(value))
-
-    elif java_type == "long":
-        return f"{int(value)}L"
-
-    elif java_type == "double":
-        return str(float(value))
-
-    elif java_type == "float":
-        return f"{float(value)}f"
-
-    elif java_type == "boolean":
-        return str(value).lower()
-
-    elif java_type == "char":
-        return f"'{value}'"
-
-    elif java_type == "String":
-        escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
-        return f'"{escaped}"'
-
-    # ---------- Primitive Arrays ----------
-    elif java_type == "int[]":
-        return "new int[]{" + ", ".join(map(str, value)) + "}"
-
-    elif java_type == "long[]":
-        return "new long[]{" + ", ".join(f"{v}L" for v in value) + "}"
-
-    elif java_type == "double[]":
-        return "new double[]{" + ", ".join(map(str, value)) + "}"
-
-    elif java_type == "float[]":
-        return "new float[]{" + ", ".join(f"{v}f" for v in value) + "}"
-
-    elif java_type == "char[]":
-        return "new char[]{" + ", ".join(f"'{c}'" for c in value) + "}"
-
-    elif java_type == "String[]":
-        vals = [f'"{str(v)}"' for v in value]
-        return "new String[]{" + ", ".join(vals) + "}"
-
-    # ---------- Lists ----------
-    elif "List" in java_type:
-
-        if len(value) == 0:
-            return "java.util.Arrays.asList()"
-
-        first = value[0]
-
-        if isinstance(first, bool):
-            vals = ", ".join(str(v).lower() for v in value)
-
-        elif isinstance(first, int):
-            vals = ", ".join(map(str, value))
-
-        elif isinstance(first, float):
-            vals = ", ".join(map(str, value))
-
-        else:
-            vals = ", ".join(f'"{str(v)}"' for v in value)
-
-        return f"java.util.Arrays.asList({vals})"
-
-    # ---------- Nested int[][] ----------
-    elif java_type == "int[][]":
-        rows = []
-        for row in value:
-            rows.append("{" + ", ".join(map(str, row)) + "}")
-        return "new int[][]{" + ", ".join(rows) + "}"
-
-    elif java_type == "long[][]":
-        rows = []
-        for row in value:
-            rows.append("{" + ", ".join(f"{v}L" for v in row) + "}")
-        return "new long[][]{" + ", ".join(rows) + "}"
-
-    elif java_type == "double[][]":
-        rows = []
-        for row in value:
-            rows.append("{" + ", ".join(map(str, row)) + "}")
-        return "new double[][]{" + ", ".join(rows) + "}"
-
-    elif java_type == "String[][]":
-        rows = []
-        for row in value:
-            rows.append("{" + ", ".join(f'"{v}"' for v in row) + "}")
-        return "new String[][]{" + ", ".join(rows) + "}"
-
-    # ---------- Generic fallback ----------
-    elif isinstance(value, str):
-        return json.dumps(value)
-
-    elif isinstance(value, bool):
-        return str(value).lower()
-
-    elif isinstance(value, list):
-        return str(value)
-
-    else:
-        return str(value)    

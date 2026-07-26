@@ -9,7 +9,8 @@ validation_llm = ChatGroq(
     model=QWEN_BASE_MODEL,
     api_key=SecretStr(GROQ_API_KEY),
     temperature=0.2,
-    max_retries=2    
+    max_retries=2,
+    reasoning_effort="none"    
 )
 
 validation_prompt = ChatPromptTemplate.from_messages(
