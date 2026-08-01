@@ -130,8 +130,9 @@ def generate_test_cases(user_query: str, generated_code: str) -> str:
         print(f"ERROR: Empty LLM response. Raw response: {response}")
         raise ValueError("LLM returned empty response for test case generation")
     
-    print(f"DEBUG: Raw LLM response length: {len(content)}")
-    print(f"DEBUG: First 400 chars: {content[:400]}")
+    # print(f"DEBUG: Raw LLM response length: {len(content)}")
+    # print(f"DEBUG: First 400 chars: {content[:400]}")
+    
     
     # Remove think tags
     content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
@@ -141,14 +142,14 @@ def generate_test_cases(user_query: str, generated_code: str) -> str:
     func_name_match = re.search(r'def\s+(\w+)\s*\(', generated_code)
     default_func_name = func_name_match.group(1) if func_name_match else "unknown"
     
-    print(f"DEBUG: Detected function name: {default_func_name}")
+    # print(f"DEBUG: Detected function name: {default_func_name}")
     
     # Extract JSON from the response (in case there's other text)
     json_match = re.search(r'\{[\s\S]*\}', content)
     if json_match:
         content = json_match.group(0)
     
-    print(f"DEBUG: Extracted JSON length: {len(content)}")
+    # print(f"DEBUG: Extracted JSON length: {len(content)}")
     
     # Try to parse and validate
     try:
@@ -168,7 +169,7 @@ def generate_test_cases(user_query: str, generated_code: str) -> str:
                 # Ensure function field exists
                 if "function" not in tc:
                     tc["function"] = default_func_name
-                    print(f"DEBUG: Added missing function name to test case {i}")
+                    #print(f"DEBUG: Added missing function name to test case {i}")
                 
                 # Ensure description exists
                 if "description" not in tc:
@@ -179,7 +180,7 @@ def generate_test_cases(user_query: str, generated_code: str) -> str:
                     print(f"WARNING: Test case {i} missing required fields")
         
         content = json.dumps(parsed)
-        print(f"DEBUG: Validated JSON: {content[:300]}")
+        print(f"DEBUG: Validated testcases JSON: {content}")
         
     except json.JSONDecodeError as e:
         print(f"WARNING: JSON parse error in generation: {e}")
@@ -288,13 +289,13 @@ def validate_python_code(user_query: str, code: str) -> float:
     test_cases_json = ""
     try:
         test_cases_json = generate_test_cases(user_query, code)
-        print(f"DEBUG: Generated test cases JSON length: {len(test_cases_json)}")
+        # print(f"DEBUG: Generated test cases JSON length: {len(test_cases_json)}")
         
         if not test_cases_json:
             print(f"ERROR: No test cases generated")
             return 0.0
             
-        print(f"DEBUG: First 300 chars: {test_cases_json[:300]}")
+        # print(f"DEBUG: First 300 chars: {test_cases_json[:300]}")
         
         test_cases = json.loads(test_cases_json)["test_cases"]  # Convert JSON string to Python object
         
