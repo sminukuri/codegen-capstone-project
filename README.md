@@ -18,6 +18,12 @@ Original Dataset java, python translation pairs: Mean AST Similarity Score: 0.54
 
 original java compilation rate: 100%
 
+original java Pass@1 : 98.80%, 98.53%
+
+original python pass@1 : 100%
+
+MBPP is unknown dataset for the finetuned model
+
 -----------------------------------------------Text to Python--------------------------------------------------------------------
 
 Pass@k evaluation metrics for Python Generation on MBPP data set
@@ -44,22 +50,53 @@ Pass@10 for text to python
 
 max_new_tokens=300, do_sample=True, temperature=0.7
 
----
+Custom dataset metrics:
 
-Overall Performance Evaluation on Custom Dataset
+| **Metric**               | **Text → Python (Base)** | **Text → Python (Fine-Tuned)** | **Text → Java (Base)** | **Text → Java (Fine-Tuned)** | **Java → Python (Base)** | **Java → Python (Fine-Tuned)** | **Python → Java (Base)** | **Python → Java (Fine-Tuned)** |
+| :----------------------- | :----------------------: | :----------------------------: | :--------------------: | :--------------------------: | :----------------------: | :----------------------------: | :----------------------: | :----------------------------: |
+| **Dataset**              |      Custom Dataset      |         Custom Dataset         |     Custom Dataset     |        Custom Dataset        |      Custom Dataset      |         Custom Dataset         |      Custom Dataset      |         Custom Dataset         |
+| **Pass@1 (%)**           |         **0.60**         |           **53.01**            |        **0.00**        |          **49.70**           |         **0.90**         |           **65.97**            |         **0.00**         |           **55.72**            |
+| **Compilation Rate (%)** |            —             |               —                |           —            |              —               |            —             |               —                |         **1.81**         |           **94.28**            |
+| **CodeBERT Similarity**  |        **0.6773**        |           **0.8516**           |       **0.6788**       |          **0.9485**          |        **0.6186**        |           **0.9180**           |        **0.6514**        |           **0.9219**           |
+| **AST Similarity**       |        **0.0123**        |           **0.7038**           |       **0.5456**       |          **0.7384**          |        **0.0455**        |           **0.6000**           |        **0.5660**        |           **0.7593**           |
+| **BLEU Score**           |        **0.0557**        |           **0.2869**           |       **0.0661**       |          **0.6961**          |        **0.0721**        |           **0.3929**           |        **0.0646**        |           **0.6881**           |
+| **ROUGE-1**              |        **0.1909**        |           **0.5473**           |       **0.1728**       |          **0.8026**          |        **0.2153**        |           **0.6262**           |        **0.1932**        |           **0.7884**           |
+| **ROUGE-2**              |        **0.0839**        |           **0.3279**           |       **0.0786**       |          **0.7116**          |        **0.1145**        |           **0.4454**           |        **0.0810**        |           **0.6774**           |
+| **ROUGE-L**              |        **0.1701**        |           **0.5014**           |       **0.1225**       |          **0.7813**          |        **0.1869**        |           **0.5794**           |        **0.1330**        |           **0.7564**           |
+| **Composite Score**      |        **0.2945**        |           **0.6530**           |       **0.4202**       |          **0.8192**          |        **0.2904**        |           **0.6824**           |        **0.4193**        |           **0.8074**           |
 
-| Metric                          |  Text → Java   | Java → Python  | Python → Java  |
-| :------------------------------ | :------------: | :------------: | :------------: |
-| **Dataset**                     | Custom Dataset | Custom Dataset | Custom Dataset |
-| **Pass@1**                      |   **49.70%**   |       —        |       —        |
-| **Java Compilation Rate**       |       —        |       —        |   **91.87%**   |
-| **CodeBERT Similarity**         |   **0.9485**   |     0.9180     |     0.8809     |
-| **AST Similarity**              |   **0.7384**   |     0.6000     |   **0.7487**   |
-| **BLEU Score**                  |   **0.6961**   |     0.3929     |     0.5319     |
-| **ROUGE-1**                     |   **0.8026**   |     0.6262     |     0.6620     |
-| **ROUGE-2**                     |   **0.7116**   |     0.4454     |     0.4809     |
-| **ROUGE-L**                     |   **0.7813**   |     0.5794     |     0.6052     |
-| **Composite Translation Score** |   **0.8192**   |     0.6824     |     0.7297     |
+Key Improvements for Text → Python
+| Metric | Base | Fine-Tuned | Improvement |
+| ----------------------- | -----: | ---------: | ---------------------------: |
+| **Pass@1** | 0.60% | **53.01%** | **+52.41 percentage points** |
+| **AST Similarity** | 0.0123 | **0.7038** | **+0.6915** |
+| **CodeBERT Similarity** | 0.6773 | **0.8516** | **+0.1743** |
+| **Composite Score** | 0.2945 | **0.6530** | **+0.3585** |
+
+Key Improvements for Text → Java
+| Metric | Base | Fine-Tuned | Improvement |
+| ----------------------- | -----: | ---------: | ---------------------------: |
+| **Pass@1** | 0.00% | **49.70%** | **+49.70 percentage points** |
+| **AST Similarity** | 0.5456 | **0.7384** | **+0.1928** |
+| **CodeBERT Similarity** | 0.6788 | **0.9485** | **+0.2697** |
+| **Composite Score** | 0.4202 | **0.8192** | **+0.3990** |
+
+Key Improvements for Java → Python
+| Metric | Base | Fine-Tuned | Improvement |
+| ----------------------- | -----: | ---------: | ---------------------------: |
+| **Pass@1** | 0.90% | **65.97%** | **+65.07 percentage points** |
+| **AST Similarity** | 0.0455 | **0.6000** | **+0.5545** |
+| **CodeBERT Similarity** | 0.6186 | **0.9180** | **+0.2994** |
+| **Composite Score** | 0.2904 | **0.6824** | **+0.3920** |
+
+Key Improvements for Python → Java
+| Metric | Base | Fine-Tuned | Improvement |
+| ----------------------- | -----: | ---------: | ---------------------------: |
+| **Pass@1** | 0.00% | **55.72%** | **+55.72 percentage points** |
+| **Compilation Rate** | 1.81% | **94.28%** | **+92.47 percentage points** |
+| **AST Similarity** | 0.5660 | **0.7593** | **+0.1933** |
+| **CodeBERT Similarity** | 0.6514 | **0.9219** | **+0.2705** |
+| **Composite Score** | 0.4193 | **0.8074** | **+0.3881** |
 
 --------------------------------------------Text to Java----------------------------------------------------------------------
 
